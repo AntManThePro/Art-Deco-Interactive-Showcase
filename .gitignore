@@ -1,0 +1,41 @@
+# Node.js dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Mac system files
+.DS_Store
+
+# VSCode specific files
+.vscode/
+
+# SASS/SCSS cache
+.sass-cache/
+
+# npm debug file
+npm-debug.log*
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Parcel cache
+.cache/
+
+# Optional: Ignore production bundle if deployed elsewhere
+/public/
+
+# Next.js output
+.next/
+
+# Other editor directories and files
+.idea/
+*.swp
