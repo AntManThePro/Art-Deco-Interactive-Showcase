@@ -1,250 +1,173 @@
-// =============================
-// 360° PRODUCT VIEWER
-// =============================
+const canvas = document.getElementById('pyramidCanvas');
+const ctx = canvas.getContext('2d');
 
-const canvas = document.getElementById('viewer-canvas');
-const ctx = canvas ? canvas.getContext('2d') : null;
-
-if (canvas && ctx) {
-    // Set canvas size
-    function resizeCanvas() {
-        const container = canvas.parentElement;
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-        drawPyramid();
-    }
-    
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    
-    // Viewer state
-    let rotation = 0;
-    let autoRotating = true;
-    let isDragging = false;
-    let lastX = 0;
-    let zoom = 1;
-    
-    // Draw 3D pyramid representation
-    function drawPyramid() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const size = Math.min(canvas.width, canvas.height) * 0.4 * zoom;
-        
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(rotation);
-        
-        // Draw pyramid layers with Art Deco styling
-        const layers = [
-            { width: size * 1.2, height: size * 0.3, color: '#B87333', y: size * 0.4 },
-            { width: size * 0.9, height: size * 0.25, color: '#D4AF37', y: size * 0.15 },
-            { width: size * 0.6, height: size * 0.2, color: '#008B8B', y: -size * 0.05 },
-            { width: size * 0.3, height: size * 0.25, color: '#FFD700', y: -size * 0.3 }
-        ];
-        
-        layers.forEach(layer => {
-            // Draw 3D effect
-            ctx.fillStyle = layer.color;
-            ctx.beginPath();
-            ctx.moveTo(-layer.width / 2, layer.y);
-            ctx.lineTo(layer.width / 2, layer.y);
-            ctx.lineTo(layer.width / 2, layer.y + layer.height);
-            ctx.lineTo(-layer.width / 2, layer.y + layer.height);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Add outline
-            ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            
-            // Add geometric Art Deco pattern
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 5; i++) {
-                const offset = (i - 2) * (layer.width / 10);
-                ctx.beginPath();
-                ctx.moveTo(offset, layer.y);
-                ctx.lineTo(offset, layer.y + layer.height);
-                ctx.stroke();
-            }
-        });
-        
-        ctx.restore();
-        
-        // Add sparkle effects
-        drawSparkles(centerX, centerY, size);
-    }
-    
-    function drawSparkles(x, y, size) {
-        const sparkles = 8;
-        const time = Date.now() * 0.001;
-        
-        for (let i = 0; i < sparkles; i++) {
-            const angle = (i / sparkles) * Math.PI * 2 + time;
-            const distance = size * 0.7;
-            const sx = x + Math.cos(angle) * distance;
-            const sy = y + Math.sin(angle) * distance;
-            const sparkSize = 3 + Math.sin(time * 2 + i) * 2;
-            
-            ctx.fillStyle = '#FFD700';
-            ctx.beginPath();
-            ctx.arc(sx, sy, sparkSize, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    // Mouse/Touch controls
-    canvas.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        lastX = e.clientX;
-        autoRotating = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            const deltaX = e.clientX - lastX;
-            rotation += deltaX * 0.01;
-            lastX = e.clientX;
-            drawPyramid();
-        }
-    });
-    
-    canvas.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
-    
-    canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        zoom += e.deltaY * -0.001;
-        zoom = Math.max(0.5, Math.min(2, zoom));
-        drawPyramid();
-    });
-    
-    // Control buttons
-    document.getElementById('rotate-left')?.addEventListener('click', () => {
-        rotation -= 0.5;
-        drawPyramid();
-    });
-    
-    document.getElementById('rotate-right')?.addEventListener('click', () => {
-        rotation += 0.5;
-        drawPyramid();
-    });
-    
-    document.getElementById('auto-rotate')?.addEventListener('click', () => {
-        autoRotating = !autoRotating;
-    });
-    
-    // Auto-rotation animation
-    function animate() {
-        if (autoRotating && !isDragging) {
-            rotation += 0.01;
-            drawPyramid();
-        }
-        requestAnimationFrame(animate);
-    }
-    
-    animate();
-}
-
-// =============================
-// LAYER EXPLORER
-// =============================
-
+let width, height;
+let rotation = { x: 0.5, y: 0.5 };
+let scale = 1;
+let isDragging = false;
+let lastMouse = { x: 0, y: 0 };
+let autoRotateEnabled = false;
 let currentLayer = 1;
-const totalLayers = 4;
 
-function updateLayerDisplay() {
-    // Hide all layer info
-    for (let i = 1; i <= totalLayers; i++) {
-        const info = document.getElementById(`layer-${i}-info`);
-        if (info) info.classList.add('hidden');
-    }
-    
-    // Show current layer info
-    const currentInfo = document.getElementById(`layer-${currentLayer}-info`);
-    if (currentInfo) currentInfo.classList.remove('hidden');
-    
-    // Update pyramid visual
-    document.querySelectorAll('.pyramid-layer').forEach(layer => {
-        layer.classList.remove('active');
-    });
-    
-    const activeLayer = document.querySelector(`[data-layer="${currentLayer}"]`);
-    if (activeLayer) activeLayer.classList.add('active');
-    
-    // Update indicator
-    const indicator = document.getElementById('layer-indicator');
-    if (indicator) indicator.textContent = `Layer ${currentLayer} of ${totalLayers}`;
-    
-    // Update button states
-    const prevBtn = document.getElementById('prev-layer');
-    const nextBtn = document.getElementById('next-layer');
-    
-    if (prevBtn) prevBtn.disabled = currentLayer === 1;
-    if (nextBtn) nextBtn.disabled = currentLayer === totalLayers;
+function resizeCanvas() {
+    width = canvas.offsetWidth;
+    height = canvas.offsetHeight;
+    canvas.width = width;
+    canvas.height = height;
 }
 
-// Layer navigation
-document.getElementById('prev-layer')?.addEventListener('click', () => {
-    if (currentLayer > 1) {
-        currentLayer--;
-        updateLayerDisplay();
-    }
-});
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-document.getElementById('next-layer')?.addEventListener('click', () => {
-    if (currentLayer < totalLayers) {
-        currentLayer++;
-        updateLayerDisplay();
-    }
-});
-
-// Click on pyramid layers
-document.querySelectorAll('.pyramid-layer').forEach(layer => {
-    layer.addEventListener('click', (e) => {
-        const layerNum = parseInt(e.currentTarget.getAttribute('data-layer'));
-        currentLayer = layerNum;
-        updateLayerDisplay();
-    });
-});
-
-// Initialize
-updateLayerDisplay();
-
-// =============================
-// SCROLL & INTERACTION
-// =============================
-
-function scrollToViewer() {
-    document.getElementById('viewer-section')?.scrollIntoView({ 
-        behavior: 'smooth' 
-    });
-}
-
-// Intersection Observer for animations
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
+const pyramid = {
+    tiers: [
+        { base: 80, height: 60, color: '#B87333', y: -120 },
+        { base: 140, height: 50, color: '#D4AF37', y: -60 },
+        { base: 200, height: 50, color: '#008B8B', y: -10 },
+        { base: 260, height: 40, color: '#A0522D', y: 40 }
+    ]
 };
 
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-        }
-    });
-}, observerOptions);
+function project3D(x, y, z) {
+    const cosX = Math.cos(rotation.x);
+    const sinX = Math.sin(rotation.x);
+    const cosY = Math.cos(rotation.y);
+    const sinY = Math.sin(rotation.y);
+    
+    let y1 = y * cosX - z * sinX;
+    let z1 = y * sinX + z * cosX;
+    let x1 = x * cosY + z1 * sinY;
+    let z2 = -x * sinY + z1 * cosY;
+    
+    const perspective = 400 / (400 + z2);
+    return {
+        x: width / 2 + x1 * perspective * scale,
+        y: height / 2 + y1 * perspective * scale
+    };
+}
 
-document.querySelectorAll('.feature-card, .spec-item').forEach(el => {
-    observer.observe(el);
+function drawPyramid() {
+    ctx.clearRect(0, 0, width, height);
+    
+    pyramid.tiers.forEach((tier, index) => {
+        const { base, height, color, y } = tier;
+        const halfBase = base / 2;
+        
+        const corners = [
+            { x: -halfBase, y: y + height, z: -halfBase },
+            { x: halfBase, y: y + height, z: -halfBase },
+            { x: halfBase, y: y + height, z: halfBase },
+            { x: -halfBase, y: y + height, z: halfBase },
+            { x: 0, y: y, z: 0 }
+        ];
+        
+        const projected = corners.map(c => project3D(c.x, c.y, c.z));
+        
+        const faces = [
+            { points: [0, 1, 4], z: (corners[0].z + corners[1].z + corners[4].z) / 3 },
+            { points: [1, 2, 4], z: (corners[1].z + corners[2].z + corners[4].z) / 3 },
+            { points: [2, 3, 4], z: (corners[2].z + corners[3].z + corners[4].z) / 3 },
+            { points: [3, 0, 4], z: (corners[3].z + corners[0].z + corners[4].z) / 3 },
+            { points: [0, 1, 2, 3], z: corners[0].z }
+        ];
+        
+        faces.sort((a, b) => a.z - b.z);
+        
+        faces.forEach(face => {
+            ctx.beginPath();
+            ctx.moveTo(projected[face.points[0]].x, projected[face.points[0]].y);
+            face.points.forEach(p => {
+                ctx.lineTo(projected[p].x, projected[p].y);
+            });
+            ctx.closePath();
+            
+            const brightness = index === currentLayer - 1 ? 1.2 : 0.8;
+            ctx.fillStyle = adjustBrightness(color, brightness);
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+    });
+    
+    drawSparkles();
+}
+
+function adjustBrightness(color, factor) {
+    const hex = color.replace('#', '');
+    const r = Math.min(255, parseInt(hex.substr(0, 2), 16) * factor);
+    const g = Math.min(255, parseInt(hex.substr(2, 2), 16) * factor);
+    const b = Math.min(255, parseInt(hex.substr(4, 2), 16) * factor);
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+const sparkles = Array.from({ length: 30 }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    size: Math.random() * 2 + 1,
+    speed: Math.random() * 0.5 + 0.2
+}));
+
+function drawSparkles() {
+    sparkles.forEach(s => {
+        ctx.fillStyle = 'rgba(212, 175, 55, 0.6)';
+        ctx.fillRect(s.x, s.y, s.size, s.size);
+        s.y += s.speed;
+        if (s.y > height) s.y = 0;
+    });
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    lastMouse = { x: e.clientX, y: e.clientY };
 });
 
-// Console branding
-console.log('%c🔶 Twisted Genius Art Deco Showcase 🔶', 
-    'font-size: 20px; font-weight: bold; color: #B87333;');
-console.log('%cInteractive showcase built with precision and passion', 
-    'font-size: 12px; color: #008B8B;');
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastMouse.x;
+    const dy = e.clientY - lastMouse.y;
+    rotation.y += dx * 0.01;
+    rotation.x += dy * 0.01;
+    lastMouse = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener('mouseup', () => isDragging = false);
+canvas.addEventListener('mouseleave', () => isDragging = false);
+
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    scale += e.deltaY * -0.001;
+    scale = Math.max(0.5, Math.min(2, scale));
+});
+
+document.getElementById('autoRotate').addEventListener('click', () => {
+    autoRotateEnabled = !autoRotateEnabled;
+});
+
+document.getElementById('resetView').addEventListener('click', () => {
+    rotation = { x: 0.5, y: 0.5 };
+    scale = 1;
+});
+
+document.querySelectorAll('.layer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const layer = parseInt(btn.dataset.layer);
+        currentLayer = layer;
+        
+        document.querySelectorAll('.layer-detail').forEach(d => d.classList.remove('active'));
+        document.querySelector(`.layer-detail[data-layer="${layer}"]`).classList.add('active');
+    });
+});
+
+function animate() {
+    if (autoRotateEnabled) {
+        rotation.y += 0.01;
+    }
+    drawPyramid();
+    requestAnimationFrame(animate);
+}
+
+animate();
