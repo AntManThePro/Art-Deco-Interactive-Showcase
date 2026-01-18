@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art Deco Pyramid Jewelry Box | Twisted Genius</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Hero Section -->
+    <section id="hero">
+        <div class="hero-content">
+            <h1 class="luxury-title">Art Deco Pyramid Jewelry Box</h1>
+            <p class="subtitle">Geometric Elegance Meets Multi-Level Mastery</p>
+            <div class="pulse-badge">Limited Craftsmanship</div>
+        </div>
+    </section>
+
+    <!-- 360 Product Viewer -->
+    <section id="viewer-360" class="section">
+        <div class="container">
+            <h2 class="section-title">360° Experience</h2>
+            <div class="viewer-wrapper">
+                <canvas id="productCanvas" width="800" height="600"></canvas>
+                <div class="viewer-controls">
+                    <button id="rotateLeft" class="control-btn">← Rotate</button>
+                    <button id="autoRotate" class="control-btn primary">Auto Rotate</button>
+                    <button id="rotateRight" class="control-btn">Rotate →</button>
+                </div>
+                <div class="viewer-info">
+                    <p>Drag to rotate • Scroll to zoom</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Layer Explorer -->
+    <section id="layer-explorer" class="section dark">
+        <div class="container">
+            <h2 class="section-title">Journey Through Four Tiers</h2>
+            <div class="explorer-grid">
+                <div class="layers-visual">
+                    <div class="pyramid-stack">
+                        <div class="layer-piece active" data-layer="0">
+                            <div class="layer-content">
+                                <span class="layer-number">1</span>
+                            </div>
+                        </div>
+                        <div class="layer-piece" data-layer="1">
+                            <div class="layer-content">
+                                <span class="layer-number">2</span>
+                            </div>
+                        </div>
+                        <div class="layer-piece" data-layer="2">
+                            <div class="layer-content">
+                                <span class="layer-number">3</span>
+                            </div>
+                        </div>
+                        <div class="layer-piece" data-layer="3">
+                            <div class="layer-content">
+                                <span class="layer-number">4</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layer-details">
+                    <div class="detail-card active" data-detail="0">
+                        <h3>Top Tier: Statement Pieces</h3>
+                        <p class="layer-desc">The apex of luxury - your most precious rings and rare collectibles displayed at the pinnacle.</p>
+                        <ul class="feature-list">
+                            <li>✦ Premium ring holders</li>
+                            <li>✦ Soft velvet lining</li>
+                            <li>✦ 3 compartments</li>
+                        </ul>
+                    </div>
+                    <div class="detail-card" data-detail="1">
+                        <h3>Second Tier: Daily Elegance</h3>
+                        <p class="layer-desc">Earrings, bracelets, and watches nestle in geometric compartments lined with copper-hued fabric.</p>
+                        <ul class="feature-list">
+                            <li>✦ 6 divided sections</li>
+                            <li>✦ Anti-tarnish coating</li>
+                            <li>✦ Removable dividers</li>
+                        </ul>
+                    </div>
+                    <div class="detail-card" data-detail="2">
+                        <h3>Third Tier: Necklace Gallery</h3>
+                        <p class="layer-desc">Elongated chamber designed for chains and pendants to hang freely, preventing tangles.</p>
+                        <ul class="feature-list">
+                            <li>✦ Hanging hooks: 8</li>
+                            <li>✦ Depth: 4 inches</li>
+                            <li>✦ Teal accent interior</li>
+                        </ul>
+                    </div>
+                    <div class="detail-card" data-detail="3">
+                        <h3>Base Vault: Heirlooms</h3>
+                        <p class="layer-desc">The foundation - a spacious lockable compartment for documents, larger pieces, or treasured memories.</p>
+                        <ul class="feature-list">
+                            <li>✦ Brass lock mechanism</li>
+                            <li>✦ 10" × 10" × 3" capacity</li>
+                            <li>✦ Cedar-lined protection</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="layer-nav">
+                <button class="nav-btn" data-nav="prev">← Previous Layer</button>
+                <div class="layer-indicator">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <button class="nav-btn" data-nav="next">Next Layer →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Luxury Showcase -->
+    <section id="luxury-showcase" class="section">
+        <div class="container">
+            <h2 class="section-title">Crafted for Connoisseurs</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">◆</div>
+                    <h3>Art Deco Design</h3>
+                    <p>Geometric precision inspired by 1920s architectural masterpieces</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">▲</div>
+                    <h3>Pyramidal Architecture</h3>
+                    <p>Four-tier system ascending from foundation to apex</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✦</div>
+                    <h3>Metallic Finishes</h3>
+                    <p>Brushed copper and teal accents with lacquered protection</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⬣</div>
+                    <h3>Handcrafted Quality</h3>
+                    <p>Individually assembled with numbered certificate</p>
+                </div>
+            </div>
+
+            <div class="specs-section">
+                <h3 class="specs-title">Technical Specifications</h3>
+                <div class="specs-grid">
+                    <div class="spec-item">
+                        <span class="spec-label">Dimensions</span>
+                        <span class="spec-value">12" × 12" × 14"</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Materials</span>
+                        <span class="spec-value">Brass, Velvet, Cedar</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Weight</span>
+                        <span class="spec-value">8.5 lbs</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Finish</span>
+                        <span class="spec-value">Copper & Teal Lacquer</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Compartments</span>
+                        <span class="spec-value">4 Tiers, 20+ Sections</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Security</span>
+                        <span class="spec-value">Brass Lock + 2 Keys</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <h3 class="cta-title">Own a Piece of Geometric Artistry</h3>
+                <button class="cta-button">Reserve Your Jewelry Box</button>
+                <p class="cta-note">Limited production run • Certificate of authenticity included</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Twisted Genius | Art Deco Pyramid Collection</p>
+        <p class="license-note">
+            Code: <a href="LICENSE">MIT License</a> | 
+            Creative Assets: <a href="ASSETS_LICENSE">CC BY-NC-ND 4.0</a>
+        </p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
