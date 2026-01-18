@@ -1,334 +1,250 @@
-// ==========================================
-// 360 PRODUCT VIEWER
-// ==========================================
+// =============================
+// 360° PRODUCT VIEWER
+// =============================
 
-class Product360Viewer {
-    constructor(canvasId) {
-        this.canvas = document.getElementById(canvasId);
-        if (!this.canvas) return;
+const canvas = document.getElementById('viewer-canvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
 
-        this.ctx = this.canvas.getContext('2d');
-        this.rotation = 0;
-        this.autoRotating = false;
-        this.isDragging = false;
-        this.lastX = 0;
-        this.scale = 1;
-
-        this.init();
+if (canvas && ctx) {
+    // Set canvas size
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        drawPyramid();
     }
-
-    init() {
-        this.setupEventListeners();
-        this.render();
-        this.setupControls();
-    }
-
-    setupEventListeners() {
-        // Mouse events
-        this.canvas.addEventListener('mousedown', (e) => this.startDrag(e));
-        this.canvas.addEventListener('mousemove', (e) => this.drag(e));
-        this.canvas.addEventListener('mouseup', () => this.endDrag());
-        this.canvas.addEventListener('mouseleave', () => this.endDrag());
-
-        // Touch events
-        this.canvas.addEventListener('touchstart', (e) => this.startDrag(e.touches[0]));
-        this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            this.drag(e.touches[0]);
-        });
-        this.canvas.addEventListener('touchend', () => this.endDrag());
-
-        // Zoom
-        this.canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            this.scale += e.deltaY * -0.001;
-            this.scale = Math.min(Math.max(0.5, this.scale), 2);
-            this.render();
-        });
-    }
-
-    startDrag(e) {
-        this.isDragging = true;
-        this.lastX = e.clientX;
-        this.autoRotating = false;
-    }
-
-    drag(e) {
-        if (!this.isDragging) return;
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Viewer state
+    let rotation = 0;
+    let autoRotating = true;
+    let isDragging = false;
+    let lastX = 0;
+    let zoom = 1;
+    
+    // Draw 3D pyramid representation
+    function drawPyramid() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        const deltaX = e.clientX - this.lastX;
-        this.rotation += deltaX * 0.01;
-        this.lastX = e.clientX;
-        this.render();
-    }
-
-    endDrag() {
-        this.isDragging = false;
-    }
-
-    setupControls() {
-        const rotateLeft = document.getElementById('rotateLeft');
-        const rotateRight = document.getElementById('rotateRight');
-        const autoRotate = document.getElementById('autoRotate');
-
-        if (rotateLeft) {
-            rotateLeft.addEventListener('click', () => {
-                this.rotation -= 0.5;
-                this.render();
-            });
-        }
-
-        if (rotateRight) {
-            rotateRight.addEventListener('click', () => {
-                this.rotation += 0.5;
-                this.render();
-            });
-        }
-
-        if (autoRotate) {
-            autoRotate.addEventListener('click', () => {
-                this.autoRotating = !this.autoRotating;
-                autoRotate.textContent = this.autoRotating ? 'Stop Rotation' : 'Auto Rotate';
-                if (this.autoRotating) {
-                    this.animate();
-                }
-            });
-        }
-    }
-
-    animate() {
-        if (!this.autoRotating) return;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const size = Math.min(canvas.width, canvas.height) * 0.4 * zoom;
         
-        this.rotation += 0.02;
-        this.render();
-        requestAnimationFrame(() => this.animate());
-    }
-
-    render() {
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-        const centerX = w / 2;
-        const centerY = h / 2;
-
-        // Clear canvas
-        this.ctx.fillStyle = '#1a1a1a';
-        this.ctx.fillRect(0, 0, w, h);
-
-        // Save context
-        this.ctx.save();
-        this.ctx.translate(centerX, centerY);
-        this.ctx.scale(this.scale, this.scale);
-        this.ctx.rotate(this.rotation);
-
-        // Draw pyramid jewelry box (simplified 3D representation)
-        this.drawPyramid();
-
-        this.ctx.restore();
-    }
-
-    drawPyramid() {
-        const colors = {
-            copper: '#B87333',
-            copperLight: '#D4915A',
-            copperDark: '#8B5A2B',
-            teal: '#008B8B',
-            tealLight: '#20B2AA',
-            gold: '#FFD700'
-        };
-
-        // Base (largest tier)
-        this.drawTier(-120, 100, 240, 80, colors.copperDark, colors.copper);
-
-        // Third tier
-        this.drawTier(-90, 20, 180, 80, colors.copper, colors.copperLight);
-
-        // Second tier
-        this.drawTier(-60, -60, 120, 80, colors.teal, colors.tealLight);
-
-        // Top tier
-        this.drawTier(-30, -140, 60, 60, colors.gold, colors.copperLight);
-
-        // Add decorative elements
-        this.addGeometricDetails();
-    }
-
-    drawTier(x, y, width, height, color1, color2) {
-        // Create gradient
-        const gradient = this.ctx.createLinearGradient(x, y, x + width, y + height);
-        gradient.addColorStop(0, color1);
-        gradient.addColorStop(1, color2);
-
-        // Draw tier
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(x, y, width, height);
-
-        // Add border
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(x, y, width, height);
-
-        // Add highlights
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(x + 5, y + 5, width - 10, height - 10);
-    }
-
-    addGeometricDetails() {
-        this.ctx.strokeStyle = '#FFD700';
-        this.ctx.lineWidth = 2;
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(rotation);
         
-        // Art Deco geometric patterns
-        for (let i = 0; i < 4; i++) {
-            const angle = (Math.PI * 2 * i) / 4;
-            const x = Math.cos(angle) * 80;
-            const y = Math.sin(angle) * 80;
+        // Draw pyramid layers with Art Deco styling
+        const layers = [
+            { width: size * 1.2, height: size * 0.3, color: '#B87333', y: size * 0.4 },
+            { width: size * 0.9, height: size * 0.25, color: '#D4AF37', y: size * 0.15 },
+            { width: size * 0.6, height: size * 0.2, color: '#008B8B', y: -size * 0.05 },
+            { width: size * 0.3, height: size * 0.25, color: '#FFD700', y: -size * 0.3 }
+        ];
+        
+        layers.forEach(layer => {
+            // Draw 3D effect
+            ctx.fillStyle = layer.color;
+            ctx.beginPath();
+            ctx.moveTo(-layer.width / 2, layer.y);
+            ctx.lineTo(layer.width / 2, layer.y);
+            ctx.lineTo(layer.width / 2, layer.y + layer.height);
+            ctx.lineTo(-layer.width / 2, layer.y + layer.height);
+            ctx.closePath();
+            ctx.fill();
             
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, 0);
-            this.ctx.lineTo(x, y);
-            this.ctx.stroke();
+            // Add outline
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Add geometric Art Deco pattern
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                const offset = (i - 2) * (layer.width / 10);
+                ctx.beginPath();
+                ctx.moveTo(offset, layer.y);
+                ctx.lineTo(offset, layer.y + layer.height);
+                ctx.stroke();
+            }
+        });
+        
+        ctx.restore();
+        
+        // Add sparkle effects
+        drawSparkles(centerX, centerY, size);
+    }
+    
+    function drawSparkles(x, y, size) {
+        const sparkles = 8;
+        const time = Date.now() * 0.001;
+        
+        for (let i = 0; i < sparkles; i++) {
+            const angle = (i / sparkles) * Math.PI * 2 + time;
+            const distance = size * 0.7;
+            const sx = x + Math.cos(angle) * distance;
+            const sy = y + Math.sin(angle) * distance;
+            const sparkSize = 3 + Math.sin(time * 2 + i) * 2;
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(sx, sy, sparkSize, 0, Math.PI * 2);
+            ctx.fill();
         }
     }
+    
+    // Mouse/Touch controls
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastX = e.clientX;
+        autoRotating = false;
+    });
+    
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const deltaX = e.clientX - lastX;
+            rotation += deltaX * 0.01;
+            lastX = e.clientX;
+            drawPyramid();
+        }
+    });
+    
+    canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+    
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        zoom += e.deltaY * -0.001;
+        zoom = Math.max(0.5, Math.min(2, zoom));
+        drawPyramid();
+    });
+    
+    // Control buttons
+    document.getElementById('rotate-left')?.addEventListener('click', () => {
+        rotation -= 0.5;
+        drawPyramid();
+    });
+    
+    document.getElementById('rotate-right')?.addEventListener('click', () => {
+        rotation += 0.5;
+        drawPyramid();
+    });
+    
+    document.getElementById('auto-rotate')?.addEventListener('click', () => {
+        autoRotating = !autoRotating;
+    });
+    
+    // Auto-rotation animation
+    function animate() {
+        if (autoRotating && !isDragging) {
+            rotation += 0.01;
+            drawPyramid();
+        }
+        requestAnimationFrame(animate);
+    }
+    
+    animate();
 }
 
-// ==========================================
+// =============================
 // LAYER EXPLORER
-// ==========================================
+// =============================
 
-class LayerExplorer {
-    constructor() {
-        this.currentLayer = 0;
-        this.totalLayers = 4;
-        this.init();
+let currentLayer = 1;
+const totalLayers = 4;
+
+function updateLayerDisplay() {
+    // Hide all layer info
+    for (let i = 1; i <= totalLayers; i++) {
+        const info = document.getElementById(`layer-${i}-info`);
+        if (info) info.classList.add('hidden');
     }
-
-    init() {
-        this.setupLayerClicks();
-        this.setupNavigation();
-    }
-
-    setupLayerClicks() {
-        const layers = document.querySelectorAll('.layer-piece');
-        layers.forEach((layer, index) => {
-            layer.addEventListener('click', () => this.goToLayer(index));
-        });
-    }
-
-    setupNavigation() {
-        const prevBtn = document.querySelector('[data-nav="prev"]');
-        const nextBtn = document.querySelector('[data-nav="next"]');
-
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                this.goToLayer((this.currentLayer - 1 + this.totalLayers) % this.totalLayers);
-            });
-        }
-
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                this.goToLayer((this.currentLayer + 1) % this.totalLayers);
-            });
-        }
-    }
-
-    goToLayer(index) {
-        this.currentLayer = index;
-        this.updateDisplay();
-    }
-
-    updateDisplay() {
-        // Update layer pieces
-        const layers = document.querySelectorAll('.layer-piece');
-        layers.forEach((layer, index) => {
-            layer.classList.toggle('active', index === this.currentLayer);
-        });
-
-        // Update detail cards
-        const details = document.querySelectorAll('.detail-card');
-        details.forEach((detail, index) => {
-            detail.classList.toggle('active', index === this.currentLayer);
-        });
-
-        // Update indicators
-        const dots = document.querySelectorAll('.dot');
-        dots.forEach((dot, index) => {
-            dot.classList.toggle('active', index === this.currentLayer);
-        });
-    }
+    
+    // Show current layer info
+    const currentInfo = document.getElementById(`layer-${currentLayer}-info`);
+    if (currentInfo) currentInfo.classList.remove('hidden');
+    
+    // Update pyramid visual
+    document.querySelectorAll('.pyramid-layer').forEach(layer => {
+        layer.classList.remove('active');
+    });
+    
+    const activeLayer = document.querySelector(`[data-layer="${currentLayer}"]`);
+    if (activeLayer) activeLayer.classList.add('active');
+    
+    // Update indicator
+    const indicator = document.getElementById('layer-indicator');
+    if (indicator) indicator.textContent = `Layer ${currentLayer} of ${totalLayers}`;
+    
+    // Update button states
+    const prevBtn = document.getElementById('prev-layer');
+    const nextBtn = document.getElementById('next-layer');
+    
+    if (prevBtn) prevBtn.disabled = currentLayer === 1;
+    if (nextBtn) nextBtn.disabled = currentLayer === totalLayers;
 }
 
-// ==========================================
-// SCROLL ANIMATIONS
-// ==========================================
-
-class ScrollAnimations {
-    constructor() {
-        this.init();
+// Layer navigation
+document.getElementById('prev-layer')?.addEventListener('click', () => {
+    if (currentLayer > 1) {
+        currentLayer--;
+        updateLayerDisplay();
     }
-
-    init() {
-        this.observeElements();
-    }
-
-    observeElements() {
-        const options = {
-            threshold: 0.2,
-            rootMargin: '0px 0px -100px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, options);
-
-        const elements = document.querySelectorAll('.feature-card, .spec-item');
-        elements.forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(el);
-        });
-    }
-}
-
-// ==========================================
-// CTA BUTTON INTERACTION
-// ==========================================
-
-function setupCTA() {
-    const ctaButton = document.querySelector('.cta-button');
-    if (ctaButton) {
-        ctaButton.addEventListener('click', () => {
-            // Replace with actual e-commerce link
-            alert('Reserve functionality - integrate with Squarespace Commerce or external checkout');
-            // window.location.href = 'YOUR_CHECKOUT_URL';
-        });
-    }
-}
-
-// ==========================================
-// INITIALIZE ON DOM LOAD
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize 360 viewer
-    const viewer = new Product360Viewer('productCanvas');
-
-    // Initialize layer explorer
-    const explorer = new LayerExplorer();
-
-    // Initialize scroll animations
-    const scrollAnims = new ScrollAnimations();
-
-    // Setup CTA
-    setupCTA();
-
-    console.log('🎨 Art Deco Interactive Showcase Initialized');
-    console.log('✦ 360° Viewer: Ready');
-    console.log('✦ Layer Explorer: Ready');
-    console.log('✦ Animations: Active');
 });
+
+document.getElementById('next-layer')?.addEventListener('click', () => {
+    if (currentLayer < totalLayers) {
+        currentLayer++;
+        updateLayerDisplay();
+    }
+});
+
+// Click on pyramid layers
+document.querySelectorAll('.pyramid-layer').forEach(layer => {
+    layer.addEventListener('click', (e) => {
+        const layerNum = parseInt(e.currentTarget.getAttribute('data-layer'));
+        currentLayer = layerNum;
+        updateLayerDisplay();
+    });
+});
+
+// Initialize
+updateLayerDisplay();
+
+// =============================
+// SCROLL & INTERACTION
+// =============================
+
+function scrollToViewer() {
+    document.getElementById('viewer-section')?.scrollIntoView({ 
+        behavior: 'smooth' 
+    });
+}
+
+// Intersection Observer for animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, observerOptions);
+
+document.querySelectorAll('.feature-card, .spec-item').forEach(el => {
+    observer.observe(el);
+});
+
+// Console branding
+console.log('%c🔶 Twisted Genius Art Deco Showcase 🔶', 
+    'font-size: 20px; font-weight: bold; color: #B87333;');
+console.log('%cInteractive showcase built with precision and passion', 
+    'font-size: 12px; color: #008B8B;');
