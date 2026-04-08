@@ -131,6 +131,11 @@ body {
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.control-btn.active {
+    background: linear-gradient(135deg, var(--teal), var(--gold));
+    box-shadow: 0 0 15px rgba(0, 139, 139, 0.5);
+}
+
 .control-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 20px rgba(184, 115, 51, 0.4);
