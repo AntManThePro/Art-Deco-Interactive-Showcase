@@ -31,16 +31,29 @@ let currentLayer = 1;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PYRAMID DATA
-// Each tier: base = side length of the square base, tierHeight = vertical span,
-//            color = fill color, apexY = Y position of the apex in model space
+// True 3D square-base pyramid with teal panels, copper trim, interior shelves,
+// chrome rods, mosaic accents, gold finial, and black decorative stand —
+// matching the actual Twisted Genius product.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const pyramidTiers = [
-    { base: 80,  tierHeight: 60, color: '#B87333', apexY: -120 },
-    { base: 140, tierHeight: 50, color: '#D4AF37', apexY: -60  },
-    { base: 200, tierHeight: 50, color: '#008B8B', apexY: -10  },
-    { base: 260, tierHeight: 40, color: '#A0522D', apexY:  40  },
-];
+const TEAL        = '#00B5AD';
+const TEAL_DARK   = '#007A75';
+const TEAL_LIGHT  = '#4DD9D2';
+const COPPER      = '#B87333';
+const COPPER_LITE = '#D4955A';
+const GOLD        = '#D4AF37';
+const CHROME      = '#C0C8D0';
+const CHROME_DARK = '#8A9199';
+const MOSAIC_1    = '#A8D8D4';
+const MOSAIC_2    = '#E0E4E0';
+const STAND_COLOR = '#1A1008';
+const STAND_INLAY = '#6B4226';
+
+// Pyramid geometry (model-space coordinates)
+// True square-base pyramid: apex at top-center, 4 base corners form a square
+const APEX_Y    = -170;
+const BASE_Y    =   50;
+const HALF_BASE =  130; // half-width of the square base (used for both x and z)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3D → 2D PROJECTION PIPELINE
@@ -96,53 +109,331 @@ function adjustBrightness(hexColor, factor) {
 // depth so farther faces render first (back-to-front).
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Interior shelf Y positions — 4 shelves dividing the pyramid interior
+const SHELF_YS = [
+    APEX_Y + 50,   // Tier 1 shelf (peak area)
+    APEX_Y + 100,  // Tier 2 shelf
+    APEX_Y + 150,  // Tier 3 shelf
+    BASE_Y - 10,   // Tier 4 shelf (bottom)
+];
+
+// Helper: lerp X extent at a given Y along the pyramid slope
+function slopeX(y) {
+    const t = (y - APEX_Y) / (BASE_Y - APEX_Y);
+    return HALF_BASE * t;
+}
+
+// Helper: fill & stroke a projected polygon
+function drawFace(verts3D, fillColor, strokeColor, lineWidth) {
+    const pts = verts3D.map(v => project3D(v.x, v.y, v.z));
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+    if (fillColor) { ctx.fillStyle = fillColor; ctx.fill(); }
+    if (strokeColor) { ctx.strokeStyle = strokeColor; ctx.lineWidth = lineWidth || 1; ctx.stroke(); }
+}
+
+// Helper: draw a projected line
+function drawEdge(a, b, color, width) {
+    const pa = project3D(a.x, a.y, a.z);
+    const pb = project3D(b.x, b.y, b.z);
+    ctx.beginPath();
+    ctx.moveTo(pa.x, pa.y);
+    ctx.lineTo(pb.x, pb.y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width || 1;
+    ctx.stroke();
+}
+
+// Draw mosaic tile squares along an edge
+function drawMosaicStrip(y, z, xFrom, xTo, tileCount) {
+    const tileW = (xTo - xFrom) / tileCount;
+    for (let i = 0; i < tileCount; i++) {
+        const x0 = xFrom + i * tileW;
+        const col = i % 2 === 0 ? MOSAIC_1 : MOSAIC_2;
+        drawFace(
+            [
+                { x: x0,          y: y,      z },
+                { x: x0 + tileW,  y: y,      z },
+                { x: x0 + tileW,  y: y + 6,  z },
+                { x: x0,          y: y + 6,  z },
+            ],
+            col, COPPER, 0.5
+        );
+    }
+}
+
+// Draw interior chrome rods (bracelet / necklace holders)
+function drawRods(shelfY, count, z) {
+    const halfW = slopeX(shelfY) * 0.7;
+    const rodSpacing = (halfW * 2) / (count + 1);
+    for (let i = 1; i <= count; i++) {
+        const rx = -halfW + i * rodSpacing;
+        const topY = shelfY - 22;
+        const botY = shelfY - 2;
+        // Cylindrical rod (simple rectangle in projection)
+        drawFace(
+            [
+                { x: rx - 3, y: topY, z },
+                { x: rx + 3, y: topY, z },
+                { x: rx + 3, y: botY, z },
+                { x: rx - 3, y: botY, z },
+            ],
+            CHROME, CHROME_DARK, 0.5
+        );
+        // Highlight stripe
+        drawEdge(
+            { x: rx, y: topY + 1, z },
+            { x: rx, y: botY - 1, z },
+            '#E8EEF0', 1
+        );
+    }
+}
+
+// Draw gold finial at the apex (visible from multiple angles)
+function drawFinial() {
+    const fTop = APEX_Y - 18;
+    const fBot = APEX_Y;
+    // Draw finial from two perpendicular planes so it's visible from any angle
+    [0, HALF_BASE * 0.04].forEach(fz => {
+        // Small lantern body
+        drawFace(
+            [
+                { x: -5, y: fBot, z: fz },
+                { x:  5, y: fBot, z: fz },
+                { x:  3, y: fTop + 8, z: fz },
+                { x: -3, y: fTop + 8, z: fz },
+            ],
+            GOLD, COPPER, 1
+        );
+        // Pointed spire
+        drawFace(
+            [
+                { x: -3, y: fTop + 8, z: fz },
+                { x:  3, y: fTop + 8, z: fz },
+                { x:  0, y: fTop, z: fz },
+            ],
+            GOLD, COPPER, 1
+        );
+    });
+    // Cross-plane finial (perpendicular)
+    [0].forEach(fx => {
+        drawFace(
+            [
+                { x: fx, y: fBot, z: -5 },
+                { x: fx, y: fBot, z:  5 },
+                { x: fx, y: fTop + 8, z:  3 },
+                { x: fx, y: fTop + 8, z: -3 },
+            ],
+            GOLD, COPPER, 1
+        );
+        drawFace(
+            [
+                { x: fx, y: fTop + 8, z: -3 },
+                { x: fx, y: fTop + 8, z:  3 },
+                { x: fx, y: fTop, z: 0 },
+            ],
+            GOLD, COPPER, 1
+        );
+    });
+}
+
+// Draw stand (black base with decorative 3D legs)
+function drawStand() {
+    const stTop   = BASE_Y;
+    const stBot   = BASE_Y + 70;
+    const stMid   = BASE_Y + 35;
+    const legW    = 8;
+    const legSpread = 60;
+    const standDepth = HALF_BASE * 0.4;
+
+    // Front legs
+    // Left front leg
+    drawFace(
+        [
+            { x: -50, y: stTop, z: -standDepth },
+            { x: -50 + legW, y: stTop, z: -standDepth },
+            { x: -legSpread + legW, y: stBot, z: -standDepth },
+            { x: -legSpread, y: stBot, z: -standDepth },
+        ],
+        STAND_COLOR, STAND_INLAY, 1.5
+    );
+    // Right front leg
+    drawFace(
+        [
+            { x: 50 - legW, y: stTop, z: -standDepth },
+            { x: 50, y: stTop, z: -standDepth },
+            { x: legSpread, y: stBot, z: -standDepth },
+            { x: legSpread - legW, y: stBot, z: -standDepth },
+        ],
+        STAND_COLOR, STAND_INLAY, 1.5
+    );
+    // Back legs
+    drawFace(
+        [
+            { x: -50, y: stTop, z: standDepth },
+            { x: -50 + legW, y: stTop, z: standDepth },
+            { x: -legSpread + legW, y: stBot, z: standDepth },
+            { x: -legSpread, y: stBot, z: standDepth },
+        ],
+        STAND_COLOR, STAND_INLAY, 1.5
+    );
+    drawFace(
+        [
+            { x: 50 - legW, y: stTop, z: standDepth },
+            { x: 50, y: stTop, z: standDepth },
+            { x: legSpread, y: stBot, z: standDepth },
+            { x: legSpread - legW, y: stBot, z: standDepth },
+        ],
+        STAND_COLOR, STAND_INLAY, 1.5
+    );
+    // Front cross bar
+    drawFace(
+        [
+            { x: -40, y: stMid - 3, z: -standDepth },
+            { x:  40, y: stMid - 3, z: -standDepth },
+            { x:  40, y: stMid + 3, z: -standDepth },
+            { x: -40, y: stMid + 3, z: -standDepth },
+        ],
+        STAND_COLOR, STAND_INLAY, 1
+    );
+    // Back cross bar
+    drawFace(
+        [
+            { x: -40, y: stMid - 3, z: standDepth },
+            { x:  40, y: stMid - 3, z: standDepth },
+            { x:  40, y: stMid + 3, z: standDepth },
+            { x: -40, y: stMid + 3, z: standDepth },
+        ],
+        STAND_COLOR, STAND_INLAY, 1
+    );
+    // Top platform (3D rectangle connecting front and back)
+    drawFace(
+        [
+            { x: -55, y: stTop - 2, z: -standDepth },
+            { x:  55, y: stTop - 2, z: -standDepth },
+            { x:  55, y: stTop - 2, z:  standDepth },
+            { x: -55, y: stTop - 2, z:  standDepth },
+        ],
+        STAND_COLOR, STAND_INLAY, 1
+    );
+    // Decorative curl at bottom of front legs
+    [-legSpread + 4, legSpread - 4].forEach(cx => {
+        const cp = project3D(cx, stBot, -standDepth);
+        ctx.beginPath();
+        ctx.arc(cp.x, cp.y, 5 * scale, 0, Math.PI * 2);
+        ctx.fillStyle = STAND_INLAY;
+        ctx.fill();
+    });
+}
+
 function drawPyramid() {
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    pyramidTiers.forEach((tier, index) => {
-        const half = tier.base / 2;
-        const baseY = tier.apexY + tier.tierHeight;
+    const cosX = Math.cos(rotation.x);
+    const sinX = Math.sin(rotation.x);
+    const cosY = Math.cos(rotation.y);
+    const sinY = Math.sin(rotation.y);
 
-        // 5 vertices: 4 base corners + 1 apex
-        const verts3D = [
-            { x: -half, y: baseY, z: -half }, // 0 – front-left
-            { x:  half, y: baseY, z: -half }, // 1 – front-right
-            { x:  half, y: baseY, z:  half }, // 2 – back-right
-            { x: -half, y: baseY, z:  half }, // 3 – back-left
-            { x:     0, y: tier.apexY, z: 0 }, // 4 – apex
-        ];
+    // ── 5 vertices of a true square-base pyramid ──
+    const apex = { x: 0, y: APEX_Y, z: 0 };
+    const bl   = { x: -HALF_BASE, y: BASE_Y, z: -HALF_BASE }; // front-left
+    const br   = { x:  HALF_BASE, y: BASE_Y, z: -HALF_BASE }; // front-right
+    const tr   = { x:  HALF_BASE, y: BASE_Y, z:  HALF_BASE }; // back-right
+    const tl   = { x: -HALF_BASE, y: BASE_Y, z:  HALF_BASE }; // back-left
 
-        const verts2D = verts3D.map(v => project3D(v.x, v.y, v.z));
-
-        // Each face carries its average Z (in model space after rotation)
-        // so we can sort back-to-front for correct overlap.
-        const faces = [
-            { pts: [0, 1, 4], avgZ: (verts3D[0].z + verts3D[1].z + verts3D[4].z) / 3 }, // front
-            { pts: [1, 2, 4], avgZ: (verts3D[1].z + verts3D[2].z + verts3D[4].z) / 3 }, // right
-            { pts: [2, 3, 4], avgZ: (verts3D[2].z + verts3D[3].z + verts3D[4].z) / 3 }, // back
-            { pts: [3, 0, 4], avgZ: (verts3D[3].z + verts3D[0].z + verts3D[4].z) / 3 }, // left
-            { pts: [0, 1, 2, 3], avgZ: verts3D[0].z },                                    // base
-        ];
-
-        faces.sort((a, b) => a.avgZ - b.avgZ); // painter's algorithm: far → near
-
-        const isActive = index === currentLayer - 1;
-
-        faces.forEach(face => {
-            ctx.beginPath();
-            ctx.moveTo(verts2D[face.pts[0]].x, verts2D[face.pts[0]].y);
-            for (let i = 1; i < face.pts.length; i++) {
-                ctx.lineTo(verts2D[face.pts[i]].x, verts2D[face.pts[i]].y);
-            }
-            ctx.closePath();
-
-            ctx.fillStyle = adjustBrightness(tier.color, isActive ? BRIGHTNESS_ACTIVE : BRIGHTNESS_INACTIVE);
-            ctx.fill();
-            ctx.strokeStyle = isActive ? '#FFD700' : '#111';
-            ctx.lineWidth = isActive ? 1.5 : 0.8;
-            ctx.stroke();
+    // Helper: compute average rotated-Z for a set of verts (for depth sorting)
+    function avgRotZ(verts) {
+        let sum = 0;
+        verts.forEach(v => {
+            const rz0 = v.y * sinX + v.z * cosX;
+            sum += -v.x * sinY + rz0 * cosY;
         });
+        return sum / verts.length;
+    }
+
+    // ── Build the 5 faces ──
+    const faceList = [
+        { verts: [apex, bl, br], color: TEAL,       label: 'front' },  // front
+        { verts: [apex, br, tr], color: TEAL_DARK,   label: 'right' },  // right
+        { verts: [apex, tr, tl], color: TEAL,        label: 'back'  },  // back
+        { verts: [apex, tl, bl], color: TEAL_DARK,   label: 'left'  },  // left
+        { verts: [bl, br, tr, tl], color: '#0A0A0A', label: 'bottom' }, // base
+    ];
+
+    // Depth-sort far → near (painter's algorithm)
+    faceList.forEach(f => { f.avgZ = avgRotZ(f.verts); });
+    faceList.sort((a, b) => a.avgZ - b.avgZ);
+
+    // ── Draw each face ──
+    faceList.forEach(f => {
+        const isFront = f.label === 'front';
+        let fillColor = f.color;
+
+        // Tint the active-tier face slightly brighter
+        if (f.label !== 'bottom') {
+            // Determine which tier region the "front" face is in
+            // (we shade all opaque faces the same, interior detail only on front)
+        }
+
+        if (isFront) {
+            // Semi-transparent so interior is visible
+            fillColor = 'rgba(0, 181, 173, 0.22)';
+        }
+
+        drawFace(f.verts, fillColor, COPPER, 2.5);
+
+        // ── Interior detail on the front face ──
+        if (isFront) {
+            // Place interior elements on a plane slightly behind the front face
+            const izFront = -HALF_BASE * 0.35;
+
+            SHELF_YS.forEach((sy, idx) => {
+                const shelfHalf = slopeX(sy) * 0.85;
+                const isActive  = (idx + 1) === currentLayer;
+
+                // Shelf platform (3D rectangle in interior plane)
+                const shelfColor = isActive ? '#FFD700' : 'rgba(180,180,180,0.4)';
+                drawFace(
+                    [
+                        { x: -shelfHalf, y: sy,     z: izFront },
+                        { x:  shelfHalf, y: sy,     z: izFront },
+                        { x:  shelfHalf, y: sy + 4, z: izFront },
+                        { x: -shelfHalf, y: sy + 4, z: izFront },
+                    ],
+                    shelfColor, COPPER_LITE, 1
+                );
+
+                // Chrome rods on shelf
+                const rodCount = Math.max(2, 2 + idx);
+                drawRods(sy, rodCount, izFront);
+
+                // Mosaic tiles beneath shelf
+                if (idx < SHELF_YS.length - 1) {
+                    drawMosaicStrip(sy + 5, izFront, -shelfHalf * 0.3, shelfHalf * 0.3, 4 + idx);
+                }
+            });
+
+            // Central vertical spine
+            drawEdge(
+                { x: 0, y: APEX_Y + 30, z: izFront },
+                { x: 0, y: BASE_Y - 5,  z: izFront },
+                COPPER, 2
+            );
+        }
     });
+
+    // ── Copper trim along all edges ──
+    const corners = [bl, br, tr, tl];
+    corners.forEach(c => drawEdge(apex, c, COPPER, 2.5));
+    for (let i = 0; i < 4; i++) drawEdge(corners[i], corners[(i + 1) % 4], COPPER, 2.5);
+
+    // ── Gold finial at the apex ──
+    drawFinial();
+
+    // ── Black decorative stand underneath ──
+    drawStand();
 
     drawSparkles();
 }
