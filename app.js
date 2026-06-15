@@ -371,12 +371,7 @@ function drawPyramid() {
         const isFront = f.label === 'front';
         let fillColor = f.color;
 
-        // Tint the active-tier face slightly brighter
-        if (f.label !== 'bottom') {
-            // Determine which tier region the "front" face is in
-            // (we shade all opaque faces the same, interior detail only on front)
-        }
-
+        // Tier highlighting is handled via the interior shelves (see SHELF_YS loop below)
         if (isFront) {
             // Semi-transparent so interior is visible
             fillColor = 'rgba(0, 181, 173, 0.22)';
